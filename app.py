@@ -22,47 +22,45 @@ GAME_3D_HTML = """
     canvas { display: block; width: 100%; height: 100%; }
     
     /* Overlay Screen */
-    .screen { position: absolute; inset: 0; background: rgba(10, 15, 30, 0.92); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; transition: all 0.3s ease; }
+    .screen { position: absolute; inset: 0; background: rgba(10, 15, 30, 0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; transition: all 0.3s ease; }
     .hidden { display: none !important; opacity: 0; pointer-events: none; }
     
     h1 { font-size: 38px; margin-bottom: 25px; color: #ffeb3b; text-shadow: 0 0 15px rgba(255,235,59,0.5); letter-spacing: 2px; }
     h2 { font-size: 26px; margin-bottom: 15px; color: #00e676; }
     
-    /* Menu PLAY Button (Hình chữ nhật) */
-    .btn-play { width: 240px; height: 60px; background: linear-gradient(135deg, #00e676, #00b0ff); border: none; border-radius: 10px; color: #fff; font-size: 24px; font-weight: bold; cursor: pointer; box-shadow: 0 6px 20px rgba(0,230,118,0.4); transition: transform 0.2s, box-shadow 0.2s; display: flex; align-items: center; justify-content: center; letter-spacing: 1px; }
-    .btn-play:hover { transform: translateY(-3px) scale(1.03); box-shadow: 0 10px 25px rgba(0,230,118,0.6); }
+    /* Menu PLAY Button */
+    .btn-play { width: 240px; height: 60px; background: linear-gradient(135deg, #00e676, #00b0ff); border: none; border-radius: 10px; color: #fff; font-size: 24px; font-weight: bold; cursor: pointer; box-shadow: 0 6px 20px rgba(0,230,118,0.4); transition: transform 0.2s, box-shadow 0.2s; display: flex; align-items: center; justify-content: center; letter-spacing: 1px; z-index: 101; }
+    .btn-play:hover { transform: translateY(-3px) scale(1.05); box-shadow: 0 10px 25px rgba(0,230,118,0.6); }
 
     /* Player Selection Grid */
     .player-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; width: 90%; max-width: 760px; margin-top: 10px; }
-    .player-card { background: rgba(255,255,255,0.06); border: 2px solid rgba(255,255,255,0.15); border-radius: 10px; padding: 12px 6px; text-align: center; cursor: pointer; transition: all 0.2s; }
-    .player-card:hover { border-color: #00e676; background: rgba(0,230,118,0.15); transform: translateY(-4px); }
+    .player-card { background: rgba(255,255,255,0.08); border: 2px solid rgba(255,255,255,0.15); border-radius: 10px; padding: 12px 6px; text-align: center; cursor: pointer; transition: all 0.2s; z-index: 101; }
+    .player-card:hover { border-color: #00e676; background: rgba(0,230,118,0.25); transform: translateY(-4px); }
     .player-avatar { width: 45px; height: 45px; border-radius: 50%; margin: 0 auto 6px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; border: 2px solid #fff; }
     .player-name { font-size: 13px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .player-team { font-size: 10px; color: #aaa; margin-top: 2px; }
 
-    /* In-game HUD */
+    /* HUD */
     #hud { position: absolute; top: 15px; left: 20px; right: 20px; display: flex; justify-content: space-between; font-size: 16px; font-weight: bold; z-index: 5; pointer-events: none; }
     .badge { background: rgba(0,0,0,0.6); padding: 8px 15px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.2); }
 </style>
-<!-- Thư viện Three.js 3D -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
 
 <div id="gameContainer">
-    <!-- HUD Điểm số -->
     <div id="hud">
         <div class="badge" id="playerInfo">⚽ Cầu thủ: -</div>
         <div class="badge" id="scoreInfo">Bàn thắng: 0 | Lượt: 0</div>
     </div>
 
-    <!-- MÀN HÌNH 1: MENU CHÍNH -->
+    <!-- MENU CHÍNH -->
     <div id="menuScreen" class="screen">
         <h1>⚽ 3D PENALTY SHOOTOUT</h1>
-        <button class="btn-play" onclick="openPlayerSelect()">PLAY</button>
+        <button id="playBtn" class="btn-play">PLAY</button>
     </div>
 
-    <!-- MÀN HÌNH 2: CHỌN 10 CẦU THỦ NỔI TIẾNG -->
+    <!-- BẢNG CHỌN CẦU THỦ -->
     <div id="selectScreen" class="screen hidden">
         <h2>CHỌN SIÊU SAO RA SÂN</h2>
         <div class="player-grid" id="playerGrid"></div>
@@ -87,15 +85,26 @@ let selectedPlayer = null;
 let score = 0, attempts = 0;
 let gameState = 'MENU';
 
+// SỰ KIỆN BẤM NÚT PLAY
+document.getElementById('playBtn').addEventListener('click', function(e) {
+    e.stopPropagation();
+    document.getElementById('menuScreen').classList.add('hidden');
+    document.getElementById('selectScreen').classList.remove('hidden');
+    initGrid();
+});
+
 function initGrid() {
     const grid = document.getElementById('playerGrid');
     grid.innerHTML = '';
     PLAYERS.forEach(p => {
         const card = document.createElement('div');
         card.className = 'player-card';
-        card.onclick = () => selectPlayer(p);
+        card.onclick = (e) => {
+            e.stopPropagation();
+            selectPlayer(p);
+        };
         card.innerHTML = `
-            <div class="player-avatar" style="background:#${p.shirtColor.toString(16)}; color:${p.shirtColor===0xffffff?'#000':'#fff'}">${p.jersey}</div>
+            <div class="player-avatar" style="background:#${p.shirtColor.toString(16).padStart(6,'0')}; color:${p.shirtColor===0xffffff?'#000':'#fff'}">${p.jersey}</div>
             <div class="player-name">${p.name}</div>
             <div class="player-team">${p.team}</div>
         `;
@@ -103,18 +112,12 @@ function initGrid() {
     });
 }
 
-function openPlayerSelect() {
-    document.getElementById('menuScreen').classList.add('hidden');
-    document.getElementById('selectScreen').classList.remove('hidden');
-    initGrid();
-}
-
 function selectPlayer(player) {
     selectedPlayer = player;
     document.getElementById('selectScreen').classList.add('hidden');
     document.getElementById('playerInfo').innerText = `⚽ ${player.name} (#${player.jersey})`;
     buildStrikerMesh();
-    gameState = 'AIM';
+    setTimeout(() => { gameState = 'AIM'; }, 200);
 }
 
 // --- THREE.JS 3D SCENE SETUP ---
@@ -141,7 +144,7 @@ dirLight.position.set(5, 12, 5);
 dirLight.castShadow = true;
 scene.add(dirLight);
 
-// Sân cỏ thu nhỏ
+// Sân cỏ
 const pitchGeo = new THREE.PlaneGeometry(16, 20);
 const pitchMat = new THREE.MeshStandardMaterial({ color: 0x1e7e34, roughness: 0.8 });
 const pitch = new THREE.Mesh(pitchGeo, pitchMat);
@@ -149,9 +152,7 @@ pitch.rotation.x = -Math.PI / 2;
 pitch.receiveShadow = true;
 scene.add(pitch);
 
-// ==========================================
-// THIẾT KẾ KHUNG THÀNH VÀ LƯỚI BÓNG ĐÁ CHUẨN SÂN THẬT
-// ==========================================
+// KHUNG THÀNH VÀ LƯỚI
 const goalGroup = new THREE.Group();
 goalGroup.position.set(0, 0, -6);
 
@@ -160,106 +161,46 @@ const goalWidth = 5.2;
 const goalHeight = 2.6;
 const goalDepth = 1.6;
 
-// Chất liệu cột & xà ngang màu trắng sơn bóng
-const postMat = new THREE.MeshStandardMaterial({ 
-    color: 0xffffff, 
-    roughness: 0.2, 
-    metalness: 0.1 
-});
+const postMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2, metalness: 0.1 });
 
-// Cột dọc trái & phải
 const postGeo = new THREE.CylinderGeometry(postRadius, postRadius, goalHeight, 16);
-const leftPost = new THREE.Mesh(postGeo, postMat);
-leftPost.position.set(-goalWidth/2, goalHeight/2, 0);
-leftPost.castShadow = true;
+const leftPost = new THREE.Mesh(postGeo, postMat); leftPost.position.set(-goalWidth/2, goalHeight/2, 0); leftPost.castShadow = true;
+const rightPost = new THREE.Mesh(postGeo, postMat); rightPost.position.set(goalWidth/2, goalHeight/2, 0); rightPost.castShadow = true;
 
-const rightPost = new THREE.Mesh(postGeo, postMat);
-rightPost.position.set(goalWidth/2, goalHeight/2, 0);
-rightPost.castShadow = true;
+const crossGeo = new THREE.CylinderGeometry(postRadius, postRadius, goalWidth + postRadius*2, 16); crossGeo.rotateZ(Math.PI / 2);
+const crossbar = new THREE.Mesh(crossGeo, postMat); crossbar.position.set(0, goalHeight, 0); crossbar.castShadow = true;
 
-// Xà ngang
-const cross Geo = new THREE.CylinderGeometry(postRadius, postRadius, goalWidth + postRadius*2, 16);
-crossGeo.rotateZ(Math.PI / 2);
-const crossbar = new THREE.Mesh(crossGeo, postMat);
-crossbar.position.set(0, goalHeight, 0);
-crossbar.castShadow = true;
+goalGroup.add(leftPost, rightPost, crossbar);
 
-// Khung sắt nối sau để đỡ lưới (Back Supports)
-const supportMat = new THREE.MeshStandardMaterial({ color: 0xcccccc, roughness: 0.5 });
-const backSupportGeo = new THREE.CylinderGeometry(0.04, 0.04, goalDepth, 8);
-backSupportGeo.rotateX(Math.PI / 2);
-
-const leftTopBack = new THREE.Mesh(backSupportGeo, supportMat);
-leftTopBack.position.set(-goalWidth/2, goalHeight, -goalDepth/2);
-
-const rightTopBack = new THREE.Mesh(backSupportGeo, supportMat);
-rightTopBack.position.set(goalWidth/2, goalHeight, -goalDepth/2);
-
-const backVerticalGeo = new THREE.CylinderGeometry(0.04, 0.04, goalHeight, 8);
-const leftBackVert = new THREE.Mesh(backVerticalGeo, supportMat);
-leftBackVert.position.set(-goalWidth/2, goalHeight/2, -goalDepth);
-
-const rightBackVert = new THREE.Mesh(backVerticalGeo, supportMat);
-rightBackVert.position.set(goalWidth/2, goalHeight/2, -goalDepth);
-
-goalGroup.add(leftPost, rightPost, crossbar, leftTopBack, rightTopBack, leftBackVert, rightBackVert);
-
-// --- TẠO MÀNG LƯỚI 3D (NET) ---
+// Lưới 3D
 function createNetMaterial() {
-    const canvas = document.createElement('canvas');
-    canvas.width = 64; canvas.height = 64;
+    const canvas = document.createElement('canvas'); canvas.width = 64; canvas.height = 64;
     const ctx = canvas.getContext('2d');
     ctx.fillStyle = '#000000'; ctx.fillRect(0, 0, 64, 64);
     ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 4;
-    // Vẽ mắt lưới đan
-    ctx.beginPath();
-    ctx.moveTo(0,0); ctx.lineTo(64,64);
-    ctx.moveTo(64,0); ctx.lineTo(0,64);
-    ctx.stroke();
-
+    ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(64,64); ctx.moveTo(64,0); ctx.lineTo(0,64); ctx.stroke();
     const texture = new THREE.CanvasTexture(canvas);
-    texture.wrapS = THREE.RepeatWrapping;
-    texture.wrapT = THREE.RepeatWrapping;
-    
-    return new THREE.MeshBasicMaterial({
-        map: texture,
-        transparent: true,
-        opacity: 0.55,
-        side: THREE.DoubleSide
-    });
+    texture.wrapS = THREE.RepeatWrapping; texture.wrapT = THREE.RepeatWrapping;
+    return new THREE.MeshBasicMaterial({ map: texture, transparent: true, opacity: 0.55, side: THREE.DoubleSide });
 }
-
 const netMat = createNetMaterial();
 
-// Lưới mặt sau
 const backNetGeo = new THREE.PlaneGeometry(goalWidth, goalHeight);
-const backNetMat = netMat.clone();
-backNetMat.map.repeat.set(15, 8);
-const backNet = new THREE.Mesh(backNetGeo, backNetMat);
-backNet.position.set(0, goalHeight/2, -goalDepth);
+const backNetMat = netMat.clone(); backNetMat.map.repeat.set(15, 8);
+const backNet = new THREE.Mesh(backNetGeo, backNetMat); backNet.position.set(0, goalHeight/2, -goalDepth);
 goalGroup.add(backNet);
 
-// Lưới nóc trên
 const topNetGeo = new THREE.PlaneGeometry(goalWidth, goalDepth);
-const topNetMat = netMat.clone();
-topNetMat.map.repeat.set(15, 5);
-const topNet = new THREE.Mesh(topNetGeo, topNetMat);
-topNet.rotation.x = Math.PI / 2;
-topNet.position.set(0, goalHeight, -goalDepth/2);
+const topNetMat = netMat.clone(); topNetMat.map.repeat.set(15, 5);
+const topNet = new THREE.Mesh(topNetGeo, topNetMat); topNet.rotation.x = Math.PI / 2; topNet.position.set(0, goalHeight, -goalDepth/2);
 goalGroup.add(topNet);
 
-// Lưới 2 bên hông
 const sideNetGeo = new THREE.PlaneGeometry(goalDepth, goalHeight);
-const leftNetMat = netMat.clone(); leftNetMat.map.repeat.set(5, 8);
-const leftNet = new THREE.Mesh(sideNetGeo, leftNetMat);
-leftNet.rotation.y = Math.PI / 2;
-leftNet.position.set(-goalWidth/2, goalHeight/2, -goalDepth/2);
-
-const rightNet = new THREE.Mesh(sideNetGeo, leftNetMat);
-rightNet.rotation.y = Math.PI / 2;
-rightNet.position.set(goalWidth/2, goalHeight/2, -goalDepth/2);
-
+const sideNetMat = netMat.clone(); sideNetMat.map.repeat.set(5, 8);
+const leftNet = new THREE.Mesh(sideNetGeo, sideNetMat); leftNet.rotation.y = Math.PI / 2; leftNet.position.set(-goalWidth/2, goalHeight/2, -goalDepth/2);
+const rightNet = new THREE.Mesh(sideNetGeo, sideNetMat); rightNet.rotation.y = Math.PI / 2; rightNet.position.set(goalWidth/2, goalHeight/2, -goalDepth/2);
 goalGroup.add(leftNet, rightNet);
+
 scene.add(goalGroup);
 
 // Quả bóng 3D
@@ -273,10 +214,8 @@ scene.add(ball);
 // Thủ môn 3D
 const keeperGroup = new THREE.Group();
 const keeperBodyMat = new THREE.MeshStandardMaterial({ color: 0xffeb3b });
-const keeperBody = new THREE.Mesh(new THREE.BoxGeometry(0.7, 1.1, 0.3), keeperBodyMat);
-keeperBody.position.y = 1.2;
-const keeperHead = new THREE.Mesh(new THREE.SphereGeometry(0.2, 16, 16), new THREE.MeshStandardMaterial({ color: 0xffdbac }));
-keeperHead.position.y = 1.9;
+const keeperBody = new THREE.Mesh(new THREE.BoxGeometry(0.7, 1.1, 0.3), keeperBodyMat); keeperBody.position.y = 1.2;
+const keeperHead = new THREE.Mesh(new THREE.SphereGeometry(0.2, 16, 16), new THREE.MeshStandardMaterial({ color: 0xffdbac })); keeperHead.position.y = 1.9;
 keeperGroup.add(keeperBody, keeperHead);
 keeperGroup.position.set(0, 0, -5.7);
 scene.add(keeperGroup);
@@ -293,15 +232,9 @@ function buildStrikerMesh() {
     const skinMat = new THREE.MeshStandardMaterial({ color: selectedPlayer.skinColor });
     const hairMat = new THREE.MeshStandardMaterial({ color: selectedPlayer.hairColor });
 
-    const body = new THREE.Mesh(new THREE.BoxGeometry(0.6, 1.0, 0.3), mat);
-    body.position.y = 1.1;
-    body.castShadow = true;
-
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.22, 16, 16), skinMat);
-    head.position.y = 1.85;
-    const hair = new THREE.Mesh(new THREE.SphereGeometry(0.23, 16, 16), hairMat);
-    hair.position.set(0, 1.92, -0.03);
-    hair.scale.set(1, 0.7, 1.1);
+    const body = new THREE.Mesh(new THREE.BoxGeometry(0.6, 1.0, 0.3), mat); body.position.y = 1.1; body.castShadow = true;
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.22, 16, 16), skinMat); head.position.y = 1.85;
+    const hair = new THREE.Mesh(new THREE.SphereGeometry(0.23, 16, 16), hairMat); hair.position.set(0, 1.92, -0.03); hair.scale.set(1, 0.7, 1.1);
 
     const legGeo = new THREE.BoxGeometry(0.2, 0.9, 0.2);
     const leftLeg = new THREE.Mesh(legGeo, skinMat); leftLeg.position.set(-0.2, 0.45, 0);
@@ -311,9 +244,9 @@ function buildStrikerMesh() {
     strikerGroup.position.set(0, 0, 3.8);
 }
 
-// Điều khiển sút
+// Ngắm & Sút bóng
 let targetAim = { x: 0, y: 1.5 };
-window.addEventListener('mousemove', (e) => {
+container.addEventListener('mousemove', (e) => {
     if (gameState !== 'AIM') return;
     const rect = container.getBoundingClientRect();
     let x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
@@ -322,9 +255,10 @@ window.addEventListener('mousemove', (e) => {
     targetAim.y = Math.max(0.3, Math.min(2.3, y * 1.5 + 1.2));
 });
 
-window.addEventListener('click', () => {
-    if (gameState !== 'AIM') return;
-    gameState = 'KICKING';
+container.addEventListener('click', () => {
+    if (gameState === 'AIM') {
+        gameState = 'KICKING';
+    }
 });
 
 let kickProgress = 0;
@@ -360,7 +294,7 @@ function animate() {
                 score++;
                 alert("⚽ VÀOOOOOO! Cú sút tung lưới đẳng cấp!");
             } else {
-                alert("❌ CẢN PHÁ! Thủ môn đã đẩy bóng thành công!");
+                alert("❌ CẢN PHÁ! Thủ môn đã cản phá thành công!");
             }
 
             document.getElementById('scoreInfo').innerText = `Bàn thắng: ${score} | Lượt: ${attempts}`;
@@ -371,7 +305,7 @@ function animate() {
                 keeperGroup.position.set(0, 0, -5.7);
                 kickProgress = 0;
                 gameState = 'AIM';
-            }, 1000);
+            }, 800);
         }
     }
 
