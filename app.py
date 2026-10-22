@@ -1,7 +1,7 @@
 import streamlit as st
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Game Bóng Đá 3D Siêu Sao", page_icon="⚽", layout="wide")
+st.set_page_config(page_title="World Cup 3D Shootout", page_icon="🏆", layout="wide")
 
 st.markdown("""
     <style>
@@ -25,17 +25,17 @@ GAME_3D_HTML = """
     .hidden { display: none !important; opacity: 0; pointer-events: none; }
     
     h1 { font-size: 38px; margin-bottom: 25px; color: #ffeb3b; text-shadow: 0 0 15px rgba(255,235,59,0.5); letter-spacing: 2px; }
-    h2 { font-size: 26px; margin-bottom: 15px; color: #00e676; }
+    h2 { font-size: 24px; margin-bottom: 15px; color: #00e676; }
     
-    .btn-play { width: 240px; height: 60px; background: linear-gradient(135deg, #00e676, #00b0ff); border: none; border-radius: 10px; color: #fff; font-size: 24px; font-weight: bold; cursor: pointer; box-shadow: 0 6px 20px rgba(0,230,118,0.4); transition: transform 0.2s, box-shadow 0.2s; display: flex; align-items: center; justify-content: center; letter-spacing: 1px; z-index: 101; }
-    .btn-play:hover { transform: translateY(-3px) scale(1.05); box-shadow: 0 10px 25px rgba(0,230,118,0.6); }
+    .btn-play { width: 260px; height: 65px; background: linear-gradient(135deg, #ff9800, #ff5722); border: none; border-radius: 12px; color: #fff; font-size: 26px; font-weight: bold; cursor: pointer; box-shadow: 0 6px 20px rgba(255,152,0,0.5); transition: transform 0.2s, box-shadow 0.2s; display: flex; align-items: center; justify-content: center; letter-spacing: 1.5px; z-index: 101; }
+    .btn-play:hover { transform: translateY(-3px) scale(1.05); box-shadow: 0 10px 25px rgba(255,152,0,0.7); }
 
-    .player-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; width: 90%; max-width: 760px; margin-top: 10px; }
-    .player-card { background: rgba(255,255,255,0.08); border: 2px solid rgba(255,255,255,0.15); border-radius: 10px; padding: 12px 6px; text-align: center; cursor: pointer; transition: all 0.2s; z-index: 101; }
-    .player-card:hover { border-color: #00e676; background: rgba(0,230,118,0.25); transform: translateY(-4px); }
-    .player-avatar { width: 45px; height: 45px; border-radius: 50%; margin: 0 auto 6px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; border: 2px solid #fff; }
-    .player-name { font-size: 13px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .player-team { font-size: 10px; color: #aaa; margin-top: 2px; }
+    .country-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; width: 92%; max-width: 780px; margin-top: 10px; }
+    .country-card { background: rgba(255,255,255,0.08); border: 2px solid rgba(255,255,255,0.15); border-radius: 10px; padding: 12px 6px; text-align: center; cursor: pointer; transition: all 0.2s; z-index: 101; }
+    .country-card:hover { border-color: #ffeb3b; background: rgba(255,235,59,0.2); transform: translateY(-4px); }
+    .country-flag { font-size: 32px; margin-bottom: 4px; }
+    .country-name { font-size: 14px; font-weight: bold; color: #ffeb3b; }
+    .player-star { font-size: 11px; color: #ddd; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
     #hud { position: absolute; top: 15px; left: 20px; right: 20px; display: flex; justify-content: space-between; font-size: 16px; font-weight: bold; z-index: 5; pointer-events: none; }
     .badge { background: rgba(0,0,0,0.6); padding: 8px 15px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.2); }
@@ -46,73 +46,78 @@ GAME_3D_HTML = """
 
 <div id="gameContainer">
     <div id="hud">
-        <div class="badge" id="playerInfo">⚽ Cầu thủ: -</div>
+        <div class="badge" id="playerInfo">🏆 Quốc gia: -</div>
         <div class="badge" id="scoreInfo">Bàn thắng: 0 | Lượt: 0</div>
     </div>
 
+    <!-- MENU WORLD CUP MODE -->
     <div id="menuScreen" class="screen">
-        <h1>⚽ 3D PENALTY SHOOTOUT</h1>
-        <button id="playBtn" class="btn-play">PLAY</button>
+        <h1>🏆 WORLD CUP 2026</h1>
+        <button id="playBtn" class="btn-play">WORLD CUP</button>
     </div>
 
+    <!-- BẢNG CHỌN QUỐC GIA & SIÊU SAO ĐẠI DIỆN -->
     <div id="selectScreen" class="screen hidden">
-        <h2>CHỌN SIÊU SAO RA SÂN</h2>
-        <div class="player-grid" id="playerGrid"></div>
+        <h2>CHỌN QUỐC GIA THI ĐẤU</h2>
+        <div class="country-grid" id="countryGrid"></div>
     </div>
 </div>
 
 <script>
-const PLAYERS = [
-    { name: "K. Mbappé", team: "Real Madrid", jersey: 9, shirtColor: 0xffffff, skinColor: 0x8d5524, hairColor: 0x111111 },
-    { name: "L. Messi", team: "Inter Miami", jersey: 10, shirtColor: 0xf7a8b8, skinColor: 0xffdbac, hairColor: 0x3b2219 },
-    { name: "C. Ronaldo", team: "Al Nassr", jersey: 7, shirtColor: 0xffe600, skinColor: 0xe0ac69, hairColor: 0x111111 },
-    { name: "E. Haaland", team: "Man City", jersey: 9, shirtColor: 0x6cabdd, skinColor: 0xffdbac, hairColor: 0xf3e5ab },
-    { name: "L. Yamal", team: "Barcelona", jersey: 19, shirtColor: 0xa50044, skinColor: 0x8d5524, hairColor: 0x111111 },
-    { name: "Vinícius Jr.", team: "Real Madrid", jersey: 7, shirtColor: 0xffffff, skinColor: 0x5c3826, hairColor: 0x111111 },
-    { name: "J. Bellingham", team: "Real Madrid", jersey: 5, shirtColor: 0xffffff, skinColor: 0x8d5524, hairColor: 0x1c1c1c },
-    { name: "H. Kane", team: "Bayern Munich", jersey: 9, shirtColor: 0xdc052d, skinColor: 0xffdbac, hairColor: 0xd4af37 },
-    { name: "O. Dembélé", team: "PSG", jersey: 10, shirtColor: 0x004170, skinColor: 0x5c3826, hairColor: 0x111111 },
-    { name: "M. Salah", team: "Liverpool", jersey: 11, shirtColor: 0xc8102e, skinColor: 0x8d5524, hairColor: 0x221100 }
+// DANH SÁCH 10 QUỐC GIA & SIÊU SAO ĐẠI DIỆN NỔI TIẾNG NHẤT
+const COUNTRIES = [
+    { country: "Pháp 🇫🇷", flag: "🇫🇷", player: "K. Mbappé", jersey: 10, shirtColor: 0x002395, skinColor: 0x8d5524, hairColor: 0x111111 },
+    { country: "Argentina 🇦🇷", flag: "🇦🇷", player: "L. Messi", jersey: 10, shirtColor: 0x75aadb, skinColor: 0xffdbac, hairColor: 0x3b2219 },
+    { country: "Bồ Đào Nha 🇵🇹", flag: "🇵🇹", player: "C. Ronaldo", jersey: 7, shirtColor: 0xda291c, skinColor: 0xe0ac69, hairColor: 0x111111 },
+    { country: "Tây Ban Nha 🇪🇸", flag: "🇪🇸", player: "Lamine Yamal", jersey: 19, shirtColor: 0xaa151b, skinColor: 0x8d5524, hairColor: 0x111111 },
+    { name: "Na Uy 🇳🇴", country: "Na Uy 🇳🇴", flag: "🇳🇴", player: "E. Haaland", jersey: 9, shirtColor: 0xba0c2f, skinColor: 0xffdbac, hairColor: 0xf3e5ab },
+    { country: "Brazil 🇧🇷", flag: "🇧🇷", player: "Vinícius Jr.", jersey: 7, shirtColor: 0xffdc02, skinColor: 0x5c3826, hairColor: 0x111111 },
+    { country: "Anh 🏴󠁧󠁢󠁥󠁮󠁧󠁿", flag: "🏴󠁧󠁢󠁥󠁮󠁧󠁿", player: "Harry Kane", jersey: 9, shirtColor: 0xffffff, skinColor: 0xffdbac, hairColor: 0xd4af37 },
+    { country: "Đức 🇩🇪", flag: "🇩🇪", player: "J. Musiala", jersey: 10, shirtColor: 0xffffff, skinColor: 0x8d5524, hairColor: 0x111111 },
+    { country: "Ai Cập 🇪🇬", flag: "🇪🇬", player: "M. Salah", jersey: 11, shirtColor: 0xc8102e, skinColor: 0x8d5524, hairColor: 0x221100 },
+    { country: "Bỉ 🇧🇪", flag: "🇧🇪", player: "K. De Bruyne", jersey: 7, shirtColor: 0xe30613, skinColor: 0xffdbac, hairColor: 0xeecc88 }
 ];
 
-let selectedPlayer = null;
+let selectedCountry = null;
 let score = 0, attempts = 0;
 let gameState = 'MENU';
 
+// SỰ KIỆN NÚT WORLD CUP
 document.getElementById('playBtn').addEventListener('click', function(e) {
     e.stopPropagation();
     document.getElementById('menuScreen').classList.add('hidden');
     document.getElementById('selectScreen').classList.remove('hidden');
-    initGrid();
+    initCountryGrid();
 });
 
-function initGrid() {
-    const grid = document.getElementById('playerGrid');
+function initCountryGrid() {
+    const grid = document.getElementById('countryGrid');
     grid.innerHTML = '';
-    PLAYERS.forEach(p => {
+    COUNTRIES.forEach(c => {
         const card = document.createElement('div');
-        card.className = 'player-card';
+        card.className = 'country-card';
         card.onclick = (e) => {
             e.stopPropagation();
-            selectPlayer(p);
+            selectCountry(c);
         };
         card.innerHTML = `
-            <div class="player-avatar" style="background:#${p.shirtColor.toString(16).padStart(6,'0')}; color:${p.shirtColor===0xffffff?'#000':'#fff'}">${p.jersey}</div>
-            <div class="player-name">${p.name}</div>
-            <div class="player-team">${p.team}</div>
+            <div class="country-flag">${c.flag}</div>
+            <div class="country-name">${c.country.split(' ')[0]}</div>
+            <div class="player-star">⭐ ${c.player}</div>
         `;
         grid.appendChild(card);
     });
 }
 
-function selectPlayer(player) {
-    selectedPlayer = player;
+function selectCountry(item) {
+    selectedCountry = item;
     document.getElementById('selectScreen').classList.add('hidden');
-    document.getElementById('playerInfo').innerText = `⚽ ${player.name} (#${player.jersey})`;
+    document.getElementById('playerInfo').innerText = `${item.flag} ${item.country.split(' ')[0]} - ${item.player}`;
     buildStrikerMesh();
     setTimeout(() => { gameState = 'AIM'; }, 200);
 }
 
+// SETUP THREE.JS 3D
 const container = document.getElementById('gameContainer');
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x0b1329);
@@ -135,9 +140,7 @@ const pitchGeo = new THREE.PlaneGeometry(18, 22);
 const pitchMat = new THREE.MeshStandardMaterial({ color: 0x1e7e34, roughness: 0.8 });
 const pitch = new THREE.Mesh(pitchGeo, pitchMat); pitch.rotation.x = -Math.PI / 2; pitch.receiveShadow = true; scene.add(pitch);
 
-// ==========================================
-// THIẾT KẾ HÀNG GHẾ KHÁN ĐÀI & KHÁN GIẢ NHÚN NHẢY
-// ==========================================
+// KHÁN ĐÀI KHÁN GIẢ
 const stadiumGroup = new THREE.Group();
 const fans = [];
 const crowdColors = [0xe74c3c, 0x3498db, 0xf1c40f, 0x2ecc71, 0x9b59b6, 0xffffff];
@@ -149,20 +152,17 @@ function buildBleachers(side) {
     const seatMat = new THREE.MeshStandardMaterial({ color: 0x0070f3, roughness: 0.5 });
 
     for(let r = 0; r < rows; r++) {
-        // Bậc thang đứng
         const stepGeo = new THREE.BoxGeometry(0.8, 0.4 + r*0.4, 14);
         const step = new THREE.Mesh(stepGeo, standMat);
         step.position.set(side * (7.5 + r*0.75), (0.2 + r*0.2), -2);
         bleacherGroup.add(step);
 
-        // Hàng ghế
         for(let z = -7; z <= 3; z += 1.1) {
             const seatGeo = new THREE.BoxGeometry(0.4, 0.1, 0.8);
             const seat = new THREE.Mesh(seatGeo, seatMat);
             seat.position.set(side * (7.5 + r*0.75), 0.45 + r*0.4, z);
             bleacherGroup.add(seat);
 
-            // Khán giả ngồi trên ghế
             if(Math.random() > 0.15) {
                 const fanGeo = new THREE.BoxGeometry(0.3, 0.6, 0.3);
                 const fanMat = new THREE.MeshBasicMaterial({ color: crowdColors[Math.floor(Math.random()*crowdColors.length)] });
@@ -176,8 +176,7 @@ function buildBleachers(side) {
     }
     stadiumGroup.add(bleacherGroup);
 }
-buildBleachers(1);  // Khán đài bên phải
-buildBleachers(-1); // Khán đài bên trái
+buildBleachers(1); buildBleachers(-1);
 scene.add(stadiumGroup);
 
 // KHUNG THÀNH VÀ LƯỚI
@@ -210,18 +209,14 @@ const backNet = new THREE.Mesh(backNetGeo, backNetMat); backNet.position.set(0, 
 goalGroup.add(backNet);
 scene.add(goalGroup);
 
-// ==========================================
-// TÂM NGẮM SÚT BÓNG (TARGET RETICLE 3D)
-// ==========================================
+// TÂM NGẮM 3D
 const aimGroup = new THREE.Group();
 const ringGeo = new THREE.RingGeometry(0.2, 0.26, 32);
 const ringMat = new THREE.MeshBasicMaterial({ color: 0x00ffcc, side: THREE.DoubleSide });
 const aimRing = new THREE.Mesh(ringGeo, ringMat);
-
 const dotGeo = new THREE.CircleGeometry(0.05, 16);
 const dotMat = new THREE.MeshBasicMaterial({ color: 0xffeb3b, side: THREE.DoubleSide });
 const aimDot = new THREE.Mesh(dotGeo, dotMat);
-
 aimGroup.add(aimRing, aimDot);
 aimGroup.position.set(0, 1.3, -5.9);
 scene.add(aimGroup);
@@ -234,7 +229,7 @@ ball.position.set(0, 0.22, 3.2);
 ball.castShadow = true;
 scene.add(ball);
 
-// THỦ MÔN (ĐẦY ĐỦ THÂN, ĐẦU, TAY, CHÂN)
+// THỦ MÔN
 const keeperGroup = new THREE.Group();
 const keeperBodyMat = new THREE.MeshStandardMaterial({ color: 0xffeb3b });
 const keeperSkinMat = new THREE.MeshStandardMaterial({ color: 0xffdbac });
@@ -255,18 +250,18 @@ keeperGroup.add(keeperBody, keeperHead, keeperLeftArm, keeperRightArm, keeperLef
 keeperGroup.position.set(0, 0, -5.7);
 scene.add(keeperGroup);
 
-// CẦU THỦ SÚT BÓNG (ĐỨNG XÉO 45 ĐỘ)
+// CẦU THỦ ĐẠI DIỆN QUỐC GIA
 let strikerGroup = new THREE.Group();
 let rightLegMesh = null;
 scene.add(strikerGroup);
 
 function buildStrikerMesh() {
     while(strikerGroup.children.length > 0){ strikerGroup.remove(strikerGroup.children[0]); }
-    if (!selectedPlayer) return;
+    if (!selectedCountry) return;
 
-    const mat = new THREE.MeshStandardMaterial({ color: selectedPlayer.shirtColor });
-    const skinMat = new THREE.MeshStandardMaterial({ color: selectedPlayer.skinColor });
-    const hairMat = new THREE.MeshStandardMaterial({ color: selectedPlayer.hairColor });
+    const mat = new THREE.MeshStandardMaterial({ color: selectedCountry.shirtColor });
+    const skinMat = new THREE.MeshStandardMaterial({ color: selectedCountry.skinColor });
+    const hairMat = new THREE.MeshStandardMaterial({ color: selectedCountry.hairColor });
 
     const body = new THREE.Mesh(new THREE.BoxGeometry(0.6, 1.0, 0.3), mat); body.position.y = 1.1; body.castShadow = true;
     const head = new THREE.Mesh(new THREE.SphereGeometry(0.22, 16, 16), skinMat); head.position.y = 1.85;
@@ -286,7 +281,6 @@ function buildStrikerMesh() {
     strikerGroup.rotation.y = 0.45; 
 }
 
-// BẮT VỊ TRÍ DI CHUỘT DỊCH CHUYỂN TÂM NGẮM
 let targetAim = { x: 0, y: 1.3 };
 let isTargeting = false;
 
@@ -300,7 +294,6 @@ container.addEventListener('mousemove', (e) => {
     targetAim.x = mouseX * 3.2; 
     targetAim.y = Math.max(0.2, Math.min(2.8, mouseY * 1.8 + 1.4)); 
     
-    // Cập nhật vị trí tâm ngắm 3D
     aimGroup.position.x = targetAim.x;
     aimGroup.position.y = targetAim.y;
     aimGroup.visible = true;
@@ -310,7 +303,7 @@ container.addEventListener('mousemove', (e) => {
 container.addEventListener('click', () => {
     if (gameState === 'AIM' && isTargeting) {
         gameState = 'KICKING';
-        aimGroup.visible = false; // Ẩn tâm ngắm khi đã sút
+        aimGroup.visible = false;
     }
 });
 
@@ -324,14 +317,12 @@ function animate() {
     requestAnimationFrame(animate);
     let time = clock.getElapsedTime();
 
-    // Hiệu ứng xoay nhẹ và nhún tâm ngắm
     if (aimGroup.visible) {
         aimRing.rotation.z += 0.03;
         let scale = 1 + Math.sin(time * 6) * 0.1;
         aimGroup.scale.set(scale, scale, scale);
     }
 
-    // Khán giả nhún nhảy lên xuống trên khán đài
     fans.forEach(f => {
         f.position.y = f.userData.initialY + Math.sin(time * 8 * f.userData.speed + f.userData.offset) * 0.15;
     });
@@ -375,11 +366,11 @@ function animate() {
 
             if (!saved && isInsideGoal) {
                 score++;
-                alert("⚽ VÀOOOOOO! Cú sút tung lưới cực hiểm hóc!");
+                alert(`⚽ VÀOOOOOO! Bàn thắng quý như vàng cho ${selectedCountry.country}!`);
             } else if (saved) {
-                alert("❌ CẢN PHÁ! Thủ môn đã bay người đẩy bóng thành công!");
+                alert("❌ CẢN PHÁ! Thủ môn đã xuất sắc cản phá!");
             } else {
-                alert("OUT! Cú sút đi ra ngoài khung thành!");
+                alert("OUT! Cú sút không trúng khung thành!");
             }
 
             document.getElementById('scoreInfo').innerText = `Bàn thắng: ${score} | Lượt: ${attempts}`;
