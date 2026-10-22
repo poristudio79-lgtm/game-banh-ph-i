@@ -18,23 +18,27 @@ GAME_3D_HTML = """
 <style>
     * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
     body { background: #0b0f19; color: #fff; font-family: 'Segoe UI', Tahoma, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow: hidden; }
-    #gameContainer { position: relative; width: 900px; height: 550px; background: #111; border-radius: 12px; overflow: hidden; border: 3px solid #333; }
+    #gameContainer { position: relative; width: 920px; height: 580px; background: #111; border-radius: 12px; overflow: hidden; border: 3px solid #333; }
     canvas { display: block; width: 100%; height: 100%; }
     
     .screen { position: absolute; inset: 0; background: rgba(10, 15, 30, 0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; transition: all 0.3s ease; }
     .hidden { display: none !important; opacity: 0; pointer-events: none; }
     
-    h1 { font-size: 38px; margin-bottom: 25px; color: #ffeb3b; text-shadow: 0 0 15px rgba(255,235,59,0.5); letter-spacing: 2px; }
-    h2 { font-size: 24px; margin-bottom: 15px; color: #00e676; }
+    h1 { font-size: 36px; margin-bottom: 20px; color: #ffeb3b; text-shadow: 0 0 15px rgba(255,235,59,0.5); letter-spacing: 2px; }
+    h2 { font-size: 22px; margin-bottom: 12px; color: #00e676; }
     
     .btn-play { width: 260px; height: 65px; background: linear-gradient(135deg, #ff9800, #ff5722); border: none; border-radius: 12px; color: #fff; font-size: 26px; font-weight: bold; cursor: pointer; box-shadow: 0 6px 20px rgba(255,152,0,0.5); transition: transform 0.2s, box-shadow 0.2s; display: flex; align-items: center; justify-content: center; letter-spacing: 1.5px; z-index: 101; }
     .btn-play:hover { transform: translateY(-3px) scale(1.05); box-shadow: 0 10px 25px rgba(255,152,0,0.7); }
 
-    .country-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; width: 92%; max-width: 780px; margin-top: 10px; }
-    .country-card { background: rgba(255,255,255,0.08); border: 2px solid rgba(255,255,255,0.15); border-radius: 10px; padding: 12px 6px; text-align: center; cursor: pointer; transition: all 0.2s; z-index: 101; }
-    .country-card:hover { border-color: #ffeb3b; background: rgba(255,235,59,0.2); transform: translateY(-4px); }
-    .country-flag { font-size: 32px; margin-bottom: 4px; }
-    .country-name { font-size: 14px; font-weight: bold; color: #ffeb3b; }
+    /* LƯỚI 20 QUỐC GIA (5 CỘT x 4 HÀNG) */
+    .country-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; width: 94%; max-width: 860px; height: 420px; overflow-y: auto; padding-right: 5px; }
+    .country-grid::-webkit-scrollbar { width: 6px; }
+    .country-grid::-webkit-scrollbar-thumb { background: #ffeb3b; border-radius: 3px; }
+    
+    .country-card { background: rgba(255,255,255,0.08); border: 1.5px solid rgba(255,255,255,0.15); border-radius: 10px; padding: 10px 4px; text-align: center; cursor: pointer; transition: all 0.2s; z-index: 101; }
+    .country-card:hover { border-color: #ffeb3b; background: rgba(255,235,59,0.2); transform: translateY(-3px); }
+    .country-flag { font-size: 28px; margin-bottom: 2px; }
+    .country-name { font-size: 13px; font-weight: bold; color: #ffeb3b; }
     .player-star { font-size: 11px; color: #ddd; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
     #hud { position: absolute; top: 15px; left: 20px; right: 20px; display: flex; justify-content: space-between; font-size: 16px; font-weight: bold; z-index: 5; pointer-events: none; }
@@ -50,39 +54,48 @@ GAME_3D_HTML = """
         <div class="badge" id="scoreInfo">Bàn thắng: 0 | Lượt: 0</div>
     </div>
 
-    <!-- MENU WORLD CUP MODE -->
+    <!-- MENU CHÍNH WORLD CUP -->
     <div id="menuScreen" class="screen">
         <h1>🏆 WORLD CUP 2026</h1>
         <button id="playBtn" class="btn-play">WORLD CUP</button>
     </div>
 
-    <!-- BẢNG CHỌN QUỐC GIA & SIÊU SAO ĐẠI DIỆN -->
+    <!-- CHỌN 20 QUỐC GIA & SIÊU SAO ĐẠI DIỆN -->
     <div id="selectScreen" class="screen hidden">
-        <h2>CHỌN QUỐC GIA THI ĐẤU</h2>
+        <h2>CHỌN QUỐC GIA THI ĐẤU (20 ĐỘI BÓNG)</h2>
         <div class="country-grid" id="countryGrid"></div>
     </div>
 </div>
 
 <script>
-// DANH SÁCH 10 QUỐC GIA & SIÊU SAO ĐẠI DIỆN NỔI TIẾNG NHẤT
+// DANH SÁCH 20 QUỐC GIA VÀ SIÊU SAO ĐẠI DIỆN NỔI TIẾNG NHẤT
 const COUNTRIES = [
+    { country: "Việt Nam 🇻🇳", flag: "🇻🇳", player: "Quang Hải", jersey: 19, shirtColor: 0xda251d, skinColor: 0xffdbac, hairColor: 0x111111 },
     { country: "Pháp 🇫🇷", flag: "🇫🇷", player: "K. Mbappé", jersey: 10, shirtColor: 0x002395, skinColor: 0x8d5524, hairColor: 0x111111 },
     { country: "Argentina 🇦🇷", flag: "🇦🇷", player: "L. Messi", jersey: 10, shirtColor: 0x75aadb, skinColor: 0xffdbac, hairColor: 0x3b2219 },
     { country: "Bồ Đào Nha 🇵🇹", flag: "🇵🇹", player: "C. Ronaldo", jersey: 7, shirtColor: 0xda291c, skinColor: 0xe0ac69, hairColor: 0x111111 },
     { country: "Tây Ban Nha 🇪🇸", flag: "🇪🇸", player: "Lamine Yamal", jersey: 19, shirtColor: 0xaa151b, skinColor: 0x8d5524, hairColor: 0x111111 },
-    { name: "Na Uy 🇳🇴", country: "Na Uy 🇳🇴", flag: "🇳🇴", player: "E. Haaland", jersey: 9, shirtColor: 0xba0c2f, skinColor: 0xffdbac, hairColor: 0xf3e5ab },
+    { country: "Na Uy 🇳🇴", flag: "🇳🇴", player: "E. Haaland", jersey: 9, shirtColor: 0xba0c2f, skinColor: 0xffdbac, hairColor: 0xf3e5ab },
     { country: "Brazil 🇧🇷", flag: "🇧🇷", player: "Vinícius Jr.", jersey: 7, shirtColor: 0xffdc02, skinColor: 0x5c3826, hairColor: 0x111111 },
     { country: "Anh 🏴󠁧󠁢󠁥󠁮󠁧󠁿", flag: "🏴󠁧󠁢󠁥󠁮󠁧󠁿", player: "Harry Kane", jersey: 9, shirtColor: 0xffffff, skinColor: 0xffdbac, hairColor: 0xd4af37 },
     { country: "Đức 🇩🇪", flag: "🇩🇪", player: "J. Musiala", jersey: 10, shirtColor: 0xffffff, skinColor: 0x8d5524, hairColor: 0x111111 },
     { country: "Ai Cập 🇪🇬", flag: "🇪🇬", player: "M. Salah", jersey: 11, shirtColor: 0xc8102e, skinColor: 0x8d5524, hairColor: 0x221100 },
-    { country: "Bỉ 🇧🇪", flag: "🇧🇪", player: "K. De Bruyne", jersey: 7, shirtColor: 0xe30613, skinColor: 0xffdbac, hairColor: 0xeecc88 }
+    { country: "Hàn Quốc 🇰🇷", flag: "🇰🇷", player: "Son Heung-min", jersey: 7, shirtColor: 0xeb1c24, skinColor: 0xffdbac, hairColor: 0x111111 },
+    { country: "Nhật Bản 🇯🇵", flag: "🇯🇵", player: "K. Mitoma", jersey: 7, shirtColor: 0x000080, skinColor: 0xffdbac, hairColor: 0x111111 },
+    { country: "Bỉ 🇧🇪", flag: "🇧🇪", player: "K. De Bruyne", jersey: 7, shirtColor: 0xe30613, skinColor: 0xffdbac, hairColor: 0xeecc88 },
+    { country: "Ý 🇮🇹", flag: "🇮🇹", player: "F. Chiesa", jersey: 14, shirtColor: 0x0066bc, skinColor: 0xffdbac, hairColor: 0x3b2219 },
+    { country: "Hà Lan 🇳🇱", flag: "🇳🇱", player: "V. van Dijk", jersey: 4, shirtColor: 0xff6600, skinColor: 0x8d5524, hairColor: 0x111111 },
+    { country: "Croatia 🇭🇷", flag: "🇭🇷", player: "L. Modrić", jersey: 10, shirtColor: 0xff0000, skinColor: 0xffdbac, hairColor: 0xeecc88 },
+    { country: "Uruguay 🇺🇾", flag: "🇺🇾", player: "F. Valverde", jersey: 15, shirtColor: 0x5cbbf2, skinColor: 0xffdbac, hairColor: 0x3b2219 },
+    { country: "Ma-rốc 🇲🇦", flag: "🇲🇦", player: "A. Hakimi", jersey: 2, shirtColor: 0xc1272d, skinColor: 0x8d5524, hairColor: 0x111111 },
+    { country: "Mỹ 🇺🇸", flag: "🇺🇸", player: "C. Pulisic", jersey: 10, shirtColor: 0xffffff, skinColor: 0xffdbac, hairColor: 0x3b2219 },
+    { country: "Mexico 🇲🇽", flag: "🇲🇽", player: "E. Álvarez", jersey: 4, shirtColor: 0x006847, skinColor: 0xe0ac69, hairColor: 0x111111 }
 ];
 
 let selectedCountry = null;
 let score = 0, attempts = 0;
 let gameState = 'MENU';
 
-// SỰ KIỆN NÚT WORLD CUP
 document.getElementById('playBtn').addEventListener('click', function(e) {
     e.stopPropagation();
     document.getElementById('menuScreen').classList.add('hidden');
@@ -117,18 +130,18 @@ function selectCountry(item) {
     setTimeout(() => { gameState = 'AIM'; }, 200);
 }
 
-// SETUP THREE.JS 3D
+// SETUP THREE.JS 3D SCENE
 const container = document.getElementById('gameContainer');
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x0b1329);
 scene.fog = new THREE.Fog(0x0b1329, 15, 35);
 
-const camera = new THREE.PerspectiveCamera(50, 900 / 550, 0.1, 1000);
+const camera = new THREE.PerspectiveCamera(50, 920 / 580, 0.1, 1000);
 camera.position.set(0, 3.2, 8.8);
 camera.lookAt(0, 1.4, -2);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setSize(900, 550);
+renderer.setSize(920, 580);
 renderer.shadowMap.enabled = true;
 container.appendChild(renderer.domElement);
 
@@ -140,7 +153,7 @@ const pitchGeo = new THREE.PlaneGeometry(18, 22);
 const pitchMat = new THREE.MeshStandardMaterial({ color: 0x1e7e34, roughness: 0.8 });
 const pitch = new THREE.Mesh(pitchGeo, pitchMat); pitch.rotation.x = -Math.PI / 2; pitch.receiveShadow = true; scene.add(pitch);
 
-// KHÁN ĐÀI KHÁN GIẢ
+// KHÁN ĐÀI HÀNG GHẾ KHÁN GIẢ
 const stadiumGroup = new THREE.Group();
 const fans = [];
 const crowdColors = [0xe74c3c, 0x3498db, 0xf1c40f, 0x2ecc71, 0x9b59b6, 0xffffff];
@@ -399,4 +412,4 @@ animate();
 </html>
 """
 
-components.html(GAME_3D_HTML, height=580)
+components.html(GAME_3D_HTML, height=600)
