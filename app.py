@@ -138,12 +138,12 @@ container.appendChild(renderer.domElement);
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.7); scene.add(ambientLight);
 const dirLight = new THREE.DirectionalLight(0xffffff, 0.9); dirLight.position.set(5, 12, 5); dirLight.castShadow = true; scene.add(dirLight);
 
-// SÂN CỎ & KHÁN ĐÀI KHÁN GIẢ
+// SÂN CỎ
 const pitchGeo = new THREE.PlaneGeometry(18, 22);
 const pitchMat = new THREE.MeshStandardMaterial({ color: 0x1e7e34, roughness: 0.8 });
 const pitch = new THREE.Mesh(pitchGeo, pitchMat); pitch.rotation.x = -Math.PI / 2; pitch.receiveShadow = true; scene.add(pitch);
 
-// KHÁN GIẢ NHÚN NHẢY Ở XUNG QUANH KHÁN ĐÀI
+// KHÁN GIẢ NHÚN NHẢY XUNG QUANH KHÁN ĐÀI
 const crowdGroup = new THREE.Group();
 const fans = [];
 const crowdColors = [0xe74c3c, 0x3498db, 0xf1c40f, 0x2ecc71, 0x9b59b6, 0xffffff];
@@ -153,7 +153,6 @@ for(let i=0; i<120; i++) {
     const fanMat = new THREE.MeshBasicMaterial({ color: crowdColors[Math.floor(Math.random()*crowdColors.length)] });
     const fan = new THREE.Mesh(fanGeo, fanMat);
     
-    // Đặt khán giả xung quanh hai bên hông và phía sau khung thành
     let side = Math.random() > 0.5 ? 1 : -1;
     let dist = 6.5 + Math.random() * 2;
     let depth = -7.5 + Math.random() * 12;
@@ -204,24 +203,30 @@ ball.position.set(0, 0.22, 3.2);
 ball.castShadow = true;
 scene.add(ball);
 
-// THỦ MÔN (ĐẦY ĐỦ TAY)
+// THỦ MÔN (ĐẦY ĐỦ THÂN, ĐẦU, 2 TAY VÀ 2 CHÂN)
 const keeperGroup = new THREE.Group();
 const keeperBodyMat = new THREE.MeshStandardMaterial({ color: 0xffeb3b });
 const keeperSkinMat = new THREE.MeshStandardMaterial({ color: 0xffdbac });
+const keeperPantMat = new THREE.MeshStandardMaterial({ color: 0x222222 });
 
-const keeperBody = new THREE.Mesh(new THREE.BoxGeometry(0.65, 1.0, 0.3), keeperBodyMat); keeperBody.position.y = 1.1;
+const keeperBody = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.9, 0.3), keeperBodyMat); keeperBody.position.y = 1.15;
 const keeperHead = new THREE.Mesh(new THREE.SphereGeometry(0.2, 16, 16), keeperSkinMat); keeperHead.position.y = 1.8;
 
 // Tay thủ môn
 const armGeo = new THREE.BoxGeometry(0.18, 0.7, 0.18);
-const leftArm = new THREE.Mesh(armGeo, keeperSkinMat); leftArm.position.set(-0.45, 1.1, 0); leftArm.rotation.z = 0.3;
-const rightArm = new THREE.Mesh(armGeo, keeperSkinMat); rightArm.position.set(0.45, 1.1, 0); rightArm.rotation.z = -0.3;
+const keeperLeftArm = new THREE.Mesh(armGeo, keeperSkinMat); keeperLeftArm.position.set(-0.45, 1.1, 0); keeperLeftArm.rotation.z = 0.3;
+const keeperRightArm = new THREE.Mesh(armGeo, keeperSkinMat); keeperRightArm.position.set(0.45, 1.1, 0); keeperRightArm.rotation.z = -0.3;
 
-keeperGroup.add(keeperBody, keeperHead, leftArm, rightArm);
+// Chân thủ môn
+const legGeo = new THREE.BoxGeometry(0.22, 0.8, 0.22);
+const keeperLeftLeg = new THREE.Mesh(legGeo, keeperPantMat); keeperLeftLeg.position.set(-0.2, 0.4, 0);
+const keeperRightLeg = new THREE.Mesh(legGeo, keeperPantMat); keeperRightLeg.position.set(0.2, 0.4, 0);
+
+keeperGroup.add(keeperBody, keeperHead, keeperLeftArm, keeperRightArm, keeperLeftLeg, keeperRightLeg);
 keeperGroup.position.set(0, 0, -5.7);
 scene.add(keeperGroup);
 
-// CẦU THỦ SÚT BÓNG (ĐỨNG XÉO BÊN TRÁI 45 ĐỘ, ĐẦY ĐỦ TAY)
+// CẦU THỦ SÚT BÓNG (ĐỨNG XÉO BÊN TRÁI 45 ĐỘ, ĐẦY ĐỦ TAY CHÂN)
 let strikerGroup = new THREE.Group();
 let rightLegMesh = null;
 scene.add(strikerGroup);
@@ -234,24 +239,24 @@ function buildStrikerMesh() {
     const skinMat = new THREE.MeshStandardMaterial({ color: selectedPlayer.skinColor });
     const hairMat = new THREE.MeshStandardMaterial({ color: selectedPlayer.hairColor });
 
-    // Thân
+    // Thân & Đầu
     const body = new THREE.Mesh(new THREE.BoxGeometry(0.6, 1.0, 0.3), mat); body.position.y = 1.1; body.castShadow = true;
     const head = new THREE.Mesh(new THREE.SphereGeometry(0.22, 16, 16), skinMat); head.position.y = 1.85;
     const hair = new THREE.Mesh(new THREE.SphereGeometry(0.23, 16, 16), hairMat); hair.position.set(0, 1.92, -0.03); hair.scale.set(1, 0.7, 1.1);
 
-    // Cánh tay cầu thủ
+    // Tay cầu thủ
     const armGeo = new THREE.BoxGeometry(0.18, 0.7, 0.18);
     const leftArm = new THREE.Mesh(armGeo, skinMat); leftArm.position.set(-0.42, 1.1, 0);
     const rightArm = new THREE.Mesh(armGeo, skinMat); rightArm.position.set(0.42, 1.1, 0);
 
-    // Chân
+    // Chân cầu thủ
     const legGeo = new THREE.BoxGeometry(0.2, 0.9, 0.2);
     const leftLeg = new THREE.Mesh(legGeo, skinMat); leftLeg.position.set(-0.2, 0.45, 0);
     rightLegMesh = new THREE.Mesh(legGeo, skinMat); rightLegMesh.position.set(0.2, 0.45, 0);
 
     strikerGroup.add(body, head, hair, leftArm, rightArm, leftLeg, rightLegMesh);
     
-    // ĐỨNG XÉO BÊN TRÁI 45 ĐỘ ĐỂ THẤY RÕ BÓNG VÀ CẦU THỦ
+    // Đứng xéo bên trái 45 độ
     strikerGroup.position.set(-1.2, 0, 3.8);
     strikerGroup.rotation.y = 0.45; 
 }
@@ -264,12 +269,11 @@ container.addEventListener('mousemove', (e) => {
     if (gameState !== 'AIM') return;
     const rect = container.getBoundingClientRect();
     
-    // Tính toán tọa độ ngắm chuẩn trên khung thành
     let mouseX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
     let mouseY = -((e.clientY - rect.top) / rect.height) * 2 + 1;
     
-    targetAim.x = mouseX * 3.2; // Rộng hơn cột dọc hai bên
-    targetAim.y = Math.max(0.2, Math.min(2.8, mouseY * 1.8 + 1.4)); // Cao từ sát đất tới vọt xà
+    targetAim.x = mouseX * 3.2; 
+    targetAim.y = Math.max(0.2, Math.min(2.8, mouseY * 1.8 + 1.4)); 
     isTargeting = true;
 });
 
@@ -283,7 +287,6 @@ let kickProgress = 0;
 let keeperTargetX = 0, keeperTargetY = 1.1;
 let ballSpeedX = 0, ballSpeedY = 0, ballSpeedZ = 0;
 
-// GAME LOOP 3D
 let clock = new THREE.Clock();
 
 function animate() {
@@ -297,49 +300,39 @@ function animate() {
 
     if (gameState === 'KICKING') {
         kickProgress += 0.08;
-        // Cầu thủ chạy đà xéo tới bóng
         strikerGroup.position.x += 0.1;
         strikerGroup.position.z -= 0.05;
 
         if (kickProgress >= 1) {
             gameState = 'FLYING';
             
-            // Lực sút & Tốc độ bay theo góc ngắm
             ballSpeedX = (targetAim.x - ball.position.x) * 0.09;
             ballSpeedY = (targetAim.y - ball.position.y) * 0.09;
             ballSpeedZ = (-6.0 - ball.position.z) * 0.09;
 
-            // Vung chân sút
             if(rightLegMesh) rightLegMesh.rotation.x = -1.2;
 
-            // Thủ môn đoán hướng bay người (Trái/Phải/Giữa)
             keeperTargetX = (Math.random() - 0.5) * 3.8;
             keeperTargetY = Math.random() > 0.5 ? 1.6 : 0.6;
         }
     }
 
     if (gameState === 'FLYING') {
-        // Quả bóng bay chính xác theo hướng đã ngắm
         ball.position.x += ballSpeedX;
         ball.position.y += ballSpeedY;
         ball.position.z += ballSpeedZ;
         ball.rotation.x += 0.25;
 
-        // Thủ môn bay người cản phá
         keeperGroup.position.x += (keeperTargetX - keeperGroup.position.x) * 0.12;
         keeperGroup.position.y += (keeperTargetY - keeperGroup.position.y) * 0.12;
-        keeperGroup.rotation.z = -(keeperTargetX * 0.15); // Nghiêng người khi bay
+        keeperGroup.rotation.z = -(keeperTargetX * 0.15);
 
-        // Kiểm tra bàn thắng/cản phá khi bóng đến vạch vôi
         if (ball.position.z <= -5.6) {
             gameState = 'RESULT';
             attempts++;
             
-            // Va chạm thủ môn
             let distToKeeper = Math.hypot(ball.position.x - keeperGroup.position.x, ball.position.y - keeperGroup.position.y);
             let saved = distToKeeper < 0.95;
-
-            // Đúng vị trí khung thành
             let isInsideGoal = Math.abs(ball.position.x) <= 2.6 && ball.position.y <= 2.6 && ball.position.y >= 0.1;
 
             if (!saved && isInsideGoal) {
@@ -353,10 +346,10 @@ function animate() {
 
             document.getElementById('scoreInfo').innerText = `Bàn thắng: ${score} | Lượt: ${attempts}`;
             
-            // Reset cho lượt sút tiếp theo
             setTimeout(() => {
                 ball.position.set(0, 0.22, 3.2);
                 keeperGroup.position.set(0, 0, -5.7);
+                keeperGroup.position.y = 0;
                 keeperGroup.rotation.z = 0;
                 if(rightLegMesh) rightLegMesh.rotation.x = 0;
                 buildStrikerMesh();
